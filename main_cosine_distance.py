@@ -1,7 +1,6 @@
 import os
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
@@ -86,10 +85,11 @@ def _compute_cosine_distance(activation_dict):
     layer_distances = {}
 
     for layer_idx, act in activation_dict.items():
-        b, c, _, _ = act.shape # (b, c, h, w)
+        n, h, w, c = act.shape # (N, H, W, C)
 
-        feature_map = act.reshape(b, c, -1) # (b, c, h*w)
-        flat_feature_map = feature_map.permute(1, 0, 2).reshape(c, -1) # (c, b, h*w) -> (c, b*h*w)
+        act = act.permute(0, 3, 1, 2) # (N, H, W, C) -> (N, C, H, W)
+        feature_map = act.reshape(n, c, -1) # (N, C, H*W)
+        flat_feature_map = feature_map.permute(1, 0, 2).reshape(c, -1) # (C, N, H*W) -> (C, N*H*W)
         
         norm_feature_map = F.normalize(flat_feature_map, p=2, dim=1)
         similarity_matrix = torch.mm(norm_feature_map, norm_feature_map.T)

@@ -15,6 +15,54 @@ from timm.utils import get_state_dict
 from torch.utils.tensorboard import SummaryWriter
 
 
+def load_model(model_name):
+    from models import fcmae_convnext_v1_atto, fcmae_convnext_v2_atto
+    
+    if model_name == 'convnext_v1_atto':
+        model = fcmae_convnext_v1_atto()
+        ckpt = torch.load(
+            os.path.join('./ckpt', f'{model_name + '_799.pth'}'),
+            weights_only=False, map_location='cpu'
+        )
+    
+    elif model_name == 'convnext_v2_atto':
+        model = fcmae_convnext_v2_atto()
+        ckpt = torch.load(
+            os.path.join('./ckpt', f'{model_name + '_799.pth'}'), 
+            weights_only=False, map_location='cpu'
+        )
+
+    state_dict = ckpt['model'] if 'model' in ckpt else ckpt
+    model.load_state_dict(state_dict)
+
+    return model.encoder
+
+def register_hook(model, model_name, activation_dict):
+    hooks = []
+
+    def get_hook(name):
+        def hook(model, input, output):
+            activation_dict[name] = output.detach()
+        return hook
+
+    if model_name == 'convnext_v1_atto':
+        idx = 0
+        for stage in model.stages:
+            for block in stage:
+                h = block.gelu.register_forward_hook(get_hook(idx))
+                hooks.append(h)
+                idx += 1
+    
+    elif model_name == 'convnext_v2_atto':
+        idx = 0
+        for stage in model.stages:
+            for block in stage:
+                h = block.grn.register_forward_hook(get_hook(idx))
+                hooks.append(h)
+                idx += 1
+
+    return hooks
+
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -245,7 +293,6 @@ def setup_for_distributed(is_master):
 
     __builtin__.print = print
 
-
 def is_dist_avail_and_initialized():
     if not dist.is_available():
         return False
@@ -253,27 +300,22 @@ def is_dist_avail_and_initialized():
         return False
     return True
 
-
 def get_world_size():
     if not is_dist_avail_and_initialized():
         return 1
     return dist.get_world_size()
-
 
 def get_rank():
     if not is_dist_avail_and_initialized():
         return 0
     return dist.get_rank()
 
-
 def is_main_process():
     return get_rank() == 0
-
 
 def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
-
 
 def init_distributed_mode(args):
     if args.dist_on_itp:
@@ -311,7 +353,6 @@ def init_distributed_mode(args):
                                          world_size=args.world_size, rank=args.rank)
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
-
 
 def all_reduce_mean(x):
     world_size = get_world_size()
@@ -351,7 +392,6 @@ class NativeScalerWithGradNormCount:
 
     def load_state_dict(self, state_dict):
         self._scaler.load_state_dict(state_dict)
-
 
 def get_grad_norm_(parameters, norm_type: float = 2.0) -> torch.Tensor:
     if isinstance(parameters, torch.Tensor):
@@ -428,7 +468,6 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
             if 'scaler' in checkpoint:
                 loss_scaler.load_state_dict(checkpoint['scaler'])
             print("With optim & sched!")
-
 
 def adjust_learning_rate(optimizer, epoch, args):
     """

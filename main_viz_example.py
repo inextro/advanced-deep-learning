@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from utils import load_model, register_hook
 
 
-def main(image_paths, target_layer_num, save_dir):
+def main(target_layer_num, image_paths, save_dir):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     v1_encoder = load_model('convnext_v1_atto').to(device).eval()
@@ -74,8 +74,8 @@ def main(image_paths, target_layer_num, save_dir):
         
 def _get_transform():
     return transforms.Compose([
-        transforms.Resize(256*4), 
-        transforms.CenterCrop(256*4), 
+        transforms.Resize(256*3), 
+        transforms.CenterCrop(256*3), 
         transforms.ToTensor(), 
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
@@ -88,7 +88,7 @@ def _unnormalize_image(image_tensor):
 
     return np.clip(img, 0, 1)
     
-def _create_feature_grid(activation, channel_indices, grid_size=8, upsample_size=56, padding=5):
+def _create_feature_grid(activation, channel_indices, grid_size=8, upsample_size=256, padding=30):
     act_upsampled = torch.nn.functional.interpolate(
         activation.unsqueeze(0), size=(upsample_size, upsample_size), mode='bilinear', align_corners=False
     )
@@ -120,14 +120,14 @@ def _create_feature_grid(activation, channel_indices, grid_size=8, upsample_size
 
 
 if __name__ == '__main__':
-    IMAGE_PATHS = [
+    image_paths = [
         './assets/examples/fountain.jpg', 
         './assets/examples/goldfish.jpg', 
         './assets/examples/fox.jpg', 
         './assets/examples/dog.jpg'
     ]
-    SAVE_DIR = './assets/results/'
+    save_dir = './assets/results/'
 
     main(
-        image_paths=IMAGE_PATHS, target_layer_num=10, save_dir=SAVE_DIR
+        target_layer_num=10, image_paths=image_paths, save_dir=save_dir
     )

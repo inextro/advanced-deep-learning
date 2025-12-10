@@ -54,7 +54,6 @@ def main(
     plt.figure(figsize=(8, 5))
     
     styles = {
-        # 'vit_tiny': {'color': 'green', 'marker': 'square', 'label': 'ViT MAE'}, 
         'convnext_v1_atto': {'color': 'red', 'marker': '^', 'label': 'ConvNeXt V1 Atto FCMAE'}, 
         'convnext_v2_atto': {'color': 'blue', 'marker': 'D', 'label': 'ConvNeXt V2 Atto FCMAE'}
     }

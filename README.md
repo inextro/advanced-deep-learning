@@ -60,7 +60,9 @@ To quantify feature collapse, we measured the **Feature Cosine Distance**. We ut
 - **ConvNeXt V2**: After the **GRN layer** in the expansion MLP
 
 The average cosine distance between each channel across the spatial dimensions was computed to measure feature diversity:
-$$\text{Feature Cosine Distance}=\displaystyle\frac{1}{C}\sum_i^C\sum_j^C\frac{1-\text{cos}(X_i, X_j)}{2}$$
+```math
+\text{Feature Cosine Distance}=\displaystyle\frac{1}{C}\sum_i^C\sum_j^C\frac{1-\text{cos}(X_i, X_j)}{2}
+```
 
 ## 4. Reproduction Results
 ### 4-1. Quantitative Analysis: Feature Cosine Distance
